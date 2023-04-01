@@ -8,22 +8,28 @@ provider "aws" {
 
 
 
-resource "aws_vpc" "eks_vpc" {
+resource "aws_vpc" "vm_eks_vpc" {
   cidr_block = "10.0.0.0/16"
 }
 
-resource "aws_subnet" "eks_subnet_london" {
+resource "aws_subnet" "private_eks_subnet" {
   cidr_block = "10.0.1.0/24"
-  vpc_id = aws_vpc.eks_vpc.id
+  vpc_id = aws_vpc.vm_eks_vpc.id
+  availability_zone = "eu-west-2a"
+}
+
+resource "aws_subnet" "public_eks_subnet" {
+  cidr_block = "10.0.2.0/24"
+  vpc_id = aws_vpc.vm_eks_vpc.id
   availability_zone = "eu-west-2a"
 }
 
 module "eks" {
   source = "terraform-aws-modules/eks/aws"
 
-  cluster_name = "my-private-cluster"
-  subnets = [aws_subnet.eks_subnet_london.id]
-  vpc_id = aws_vpc.eks_vpc.id
+  cluster_name = "vm-test-cluster"
+  subnets = [aws_subnet.private_eks_subnet.id]
+  vpc_id = aws_vpc.vm_eks_vpc.id
   manage_aws_auth = true
 
   tags = {
@@ -32,7 +38,7 @@ module "eks" {
   }
 
   tags_map_additional = {
-    KubernetesCluster = "my-private-cluster"
+    KubernetesCluster = "vm-test-cluster"
   }
 
   node_groups_launch_template = [
@@ -61,6 +67,18 @@ module "eks" {
         nodegroupname = "my-on-demand-node-group"
       }
     }
+
+     launch_template_spec {
+       instance_market_options {
+         market_type = "spot"
+         spot_options {
+           max_price = "0.05"
+           spot_instance_type = "one-time"
+    }
+  }
+}
+
+
   ]
 
   kubelet_extra_args = "--node-labels=foo=bar"
@@ -76,6 +94,29 @@ module "eks" {
   }
 }
 
+
+resource "aws_eip" "vm_nat_eip" {
+  vpc = true
+}
+
+resource "aws_nat_gateway" "vm_nat_gateway" {
+  allocation_id = aws_eip.vm_nat_eip.id
+  subnet_id = aws_subnet.public_eks_subne.id
+}
+
+resource "aws_route_table" "private_route_table" {
+  vpc_id = aws_vpc.vm_eks_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.vm_nat_gateway.id
+  }
+}
+
+resource "aws_route_table_association" "private_route_table_association" {
+  subnet_id = aws_subnet.eks_subnet_london.id
+  route_table_id = aws_route_table.private_route_table.id
+}
 
   
    
