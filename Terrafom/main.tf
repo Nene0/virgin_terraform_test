@@ -101,7 +101,7 @@ resource "aws_eip" "vm_nat_eip" {
 
 resource "aws_nat_gateway" "vm_nat_gateway" {
   allocation_id = aws_eip.vm_nat_eip.id
-  subnet_id = aws_subnet.public_eks_subne.id
+  subnet_id = aws_subnet.public_eks_subnet.id
 }
 
 resource "aws_route_table" "vm_private_rt" {
@@ -114,7 +114,7 @@ resource "aws_route_table" "vm_private_rt" {
 }
 
 resource "aws_route_table_association" "vm_private_rt_association" {
-  subnet_id = aws_subnet.public_eks_subne.id
+  subnet_id = aws_subnet.public_eks_subnet.id
   route_table_id = aws_route_table.vm_private_rt
 }
 
