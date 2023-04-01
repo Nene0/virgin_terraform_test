@@ -2,8 +2,8 @@
 provider "aws" {
   version = "~> 4.0"
   region  = "eu-west-2"
-  access_key = "my-access-key"    #replace with your access and secret key. make use to hard code to avoiavoiding viewing it in plane text
-  secret_key = "my-secret-key"
+  access_key = "AKIAUVWYTCGUY5LSQKM2"  #replace with your access and secret key. make use to hard code to avoiavoiding viewing it in plane text
+  secret_key = "BT4mryfP+aPbJVOZuGI8Dvy5iDgYy2jrGpl7BsCp"
 }
 
 
@@ -104,7 +104,7 @@ resource "aws_nat_gateway" "vm_nat_gateway" {
   subnet_id = aws_subnet.public_eks_subne.id
 }
 
-resource "aws_route_table" "private_route_table" {
+resource "aws_route_table" "vm_private_rt" {
   vpc_id = aws_vpc.vm_eks_vpc.id
 
   route {
@@ -113,9 +113,9 @@ resource "aws_route_table" "private_route_table" {
   }
 }
 
-resource "aws_route_table_association" "private_route_table_association" {
-  subnet_id = aws_subnet.eks_subnet_london.id
-  route_table_id = aws_route_table.private_route_table.id
+resource "aws_route_table_association" "vm_private_rt_association" {
+  subnet_id = aws_subnet.public_eks_subne.id
+  route_table_id = aws_route_table.vm_private_rt
 }
 
   
